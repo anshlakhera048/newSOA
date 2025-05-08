@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Management System</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .section { margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+    input, button { padding: 8px; margin-right: 10px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+  </style>
+</head>
+<body>
+  <h1>Student Management System</h1>
+  
+  <div class="section">
+    <h2>Students</h2>
+    <input type="text" id="studentName" placeholder="Student name">
+    <input type="email" id="studentEmail" placeholder="Student email">
+    <button onclick="addStudent()">Add Student</button>
+    <table id="studentsTable">
+      <thead>
+        <tr><th>ID</th><th>Name</th><th>Email</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  
+  <div class="section">
+    <h2>Courses</h2>
+    <input type="text" id="courseTitle" placeholder="Course title">
+    <input type="text" id="courseDescription" placeholder="Description">
+    <button onclick="addCourse()">Add Course</button>
+    <table id="coursesTable">
+      <thead>
+        <tr><th>ID</th><th>Title</th><th>Description</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  
+  <div class="section">
+    <h2>Enrollments</h2>
+    <input type="text" id="enrollmentStudentId" placeholder="Student ID">
+    <input type="text" id="enrollmentCourseId" placeholder="Course ID">
+    <button onclick="addEnrollment()">Add Enrollment</button>
+    <table id="enrollmentsTable">
+      <thead>
+        <tr><th>ID</th><th>Student</th><th>Course</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    // Base URLs - Update these with your Render service URLs after deployment
+    const STUDENT_SERVICE_URL = 'https://student-service.onrender.com';
+    const COURSE_SERVICE_URL = 'https://course-service.onrender.com';
+    const ENROLLMENT_SERVICE_URL = 'https://enrollment-service.onrender.com';
+    
+    // Fetch and display data on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchStudents();
+      fetchCourses();
+      fetchEnrollments();
+    });
+    
+    // Student functions
+    async function fetchStudents() {
+      try {
+        const response = await fetch(`${STUDENT_SERVICE_URL}/students`);
+        const students = await response.json();
+        const tbody = document.querySelector('#studentsTable tbody');
+        tbody.innerHTML = students.map(student => `
+          <tr>
+            <td>${student._id}</td>
+            <td>${student.name}</td>
+            <td>${student.email || ''}</td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error('Error fetching students:', err);
+      }
+    }
+    
+    async function addStudent() {
+      const name = document.getElementById('studentName').value.trim();
+      const email = document.getElementById('studentEmail').value.trim();
+      
+      if (!name) {
+        alert('Name is required');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${STUDENT_SERVICE_URL}/students`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email })
+        });
+        
+        if (response.ok) {
+          document.getElementById('studentName').value = '';
+          document.getElementById('studentEmail').value = '';
+          fetchStudents();
+        } else {
+          const error = await response.json();
+          alert(`Error: ${error.error}`);
+        }
+      } catch (err) {
+        console.error('Error adding student:', err);
+        alert('Failed to add student');
+      }
+    }
+    
+    // Course functions (similar structure)
+    async function fetchCourses() {
+      try {
+        const response = await fetch(`${COURSE_SERVICE_URL}/courses`);
+        const courses = await response.json();
+        const tbody = document.querySelector('#coursesTable tbody');
+        tbody.innerHTML = courses.map(course => `
+          <tr>
+            <td>${course._id}</td>
+            <td>${course.title}</td>
+            <td>${course.description || ''}</td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error('Error fetching courses:', err);
+      }
+    }
+    
+    async function addCourse() {
+      const title = document.getElementById('courseTitle').value.trim();
+      const description = document.getElementById('courseDescription').value.trim();
+      
+      if (!title) {
+        alert('Title is required');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${COURSE_SERVICE_URL}/courses`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, description })
+        });
+        
+        if (response.ok) {
+          document.getElementById('courseTitle').value = '';
+          document.getElementById('courseDescription').value = '';
+          fetchCourses();
+        } else {
+          const error = await response.json();
+          alert(`Error: ${error.error}`);
+        }
+      } catch (err) {
+        console.error('Error adding course:', err);
+        alert('Failed to add course');
+      }
+    }
+    
+    // Enrollment functions
+    async function fetchEnrollments() {
+      try {
+        const response = await fetch(`${ENROLLMENT_SERVICE_URL}/enrollments`);
+        const enrollments = await response.json();
+        const tbody = document.querySelector('#enrollmentsTable tbody');
+        tbody.innerHTML = enrollments.map(enrollment => `
+          <tr>
+            <td>${enrollment._id}</td>
+            <td>${enrollment.studentId?.name || enrollment.studentId}</td>
+            <td>${enrollment.courseId?.title || enrollment.courseId}</td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error('Error fetching enrollments:', err);
+      }
+    }
+    
+    async function addEnrollment() {
+      const studentId = document.getElementById('enrollmentStudentId').value.trim();
+      const courseId = document.getElementById('enrollmentCourseId').value.trim();
+      
+      if (!studentId || !courseId) {
+        alert('Both Student ID and Course ID are required');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${ENROLLMENT_SERVICE_URL}/enrollments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ studentId, courseId })
+        });
+        
+        if (response.ok) {
+          document.getElementById('enrollmentStudentId').value = '';
+          document.getElementById('enrollmentCourseId').value = '';
+          fetchEnrollments();
+        } else {
+          const error = await response.json();
+          alert(`Error: ${error.error}`);
+        }
+      } catch (err) {
+        console.error('Error adding enrollment:', err);
+        alert('Failed to add enrollment');
+      }
+    }
+  </script>
+</body>
+</html>
